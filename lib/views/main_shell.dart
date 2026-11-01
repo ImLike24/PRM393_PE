@@ -7,6 +7,7 @@ import 'now_playing_page.dart';
 import '../controllers/player_controller.dart';
 import 'package:just_audio/just_audio.dart';
 
+/// Khung chính của ứng dụng chứa các tab điều hướng và thanh phát nhạc thu nhỏ (Mini Player).
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -20,28 +21,26 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: index,
-            children: const [
-              HomePage(),
-              SearchPage(),
-              RankingPage(),
-              ProfilePage(),
-            ],
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: ValueListenableBuilder<int>(
-              valueListenable: PlayerController.instance.playerChangeNotifier,
-              builder: (context, _, __) {
-                final song = PlayerController.instance.current;
-                if (song == null) return const SizedBox.shrink();
+      body: IndexedStack(
+        index: index,
+        children: const [
+          HomePage(),
+          SearchPage(),
+          RankingPage(),
+          ProfilePage(),
+        ],
+      ),
+      bottomNavigationBar: ValueListenableBuilder<int>(
+        valueListenable: PlayerController.instance.playerChangeNotifier,
+        builder: (context, _, __) {
+          final song = PlayerController.instance.current;
 
-                return StreamBuilder<PlayerState>(
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Thanh phát nhạc thu nhỏ (Mini Player) hiển thị ngay trên bottom navigation bar, không làm chắn UI
+              if (song != null)
+                StreamBuilder<PlayerState>(
                   stream: PlayerController.instance.playerStateStream,
                   builder: (context, snapshot) {
                     final playing = snapshot.data?.playing ?? PlayerController.instance.playing;
@@ -55,14 +54,14 @@ class _MainShellState extends State<MainShell> {
                       },
                       child: Container(
                         height: 64,
-                        margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, -2),
                             ),
@@ -116,37 +115,40 @@ class _MainShellState extends State<MainShell> {
                                 await PlayerController.instance.togglePlay();
                                 setState(() {});
                               },
+                              tooltip: playing ? 'Tạm dừng' : 'Phát',
                             ),
                             IconButton(
                               icon: const Icon(Icons.skip_next),
                               onPressed: () async {
                                 await PlayerController.instance.next();
                               },
+                              tooltip: 'Bài tiếp theo',
                             ),
                           ],
                         ),
                       ),
                     );
                   },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (i) => setState(() => index = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.search), label: 'Tim kiem'),
-          NavigationDestination(icon: Icon(Icons.emoji_events), label: 'Xep hang'),
-          NavigationDestination(icon: Icon(Icons.person), label: 'Ca nhan'),
-        ],
+                ),
+              // Thanh điều hướng chính (Bottom Navigation Bar)
+              NavigationBar(
+                selectedIndex: index,
+                onDestinationSelected: (i) => setState(() => index = i),
+                destinations: const [
+                  NavigationDestination(icon: Icon(Icons.home), label: 'Trang chủ'),
+                  NavigationDestination(icon: Icon(Icons.search), label: 'Tìm kiếm'),
+                  NavigationDestination(icon: Icon(Icons.emoji_events), label: 'Xếp hạng'),
+                  NavigationDestination(icon: Icon(Icons.person), label: 'Cá nhân'),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
+  /// Trả về ảnh bìa mặc định khi không tải được ảnh.
   Widget _coverPh() {
     return Container(
       width: 48,

@@ -1,4 +1,5 @@
+/// Cấu hình đường dẫn API server cho ứng dụng.
 class ApiConfig {
-  // Medium Phone (emulator)
+  /// Đường dẫn server Node.js (sử dụng 10.0.2.2 cho máy ảo Android Emulator)
   static const String baseUrl = 'http://10.0.2.2:3000';
 }

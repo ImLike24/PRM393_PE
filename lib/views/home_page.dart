@@ -5,7 +5,9 @@ import '../services/music_service.dart';
 import '../services/session.dart';
 import 'login_page.dart';
 import 'now_playing_page.dart';
+import 'playlist_detail_page.dart';
 
+/// Màn hình Trang chủ hiển thị danh sách bài hát nghe gần đây, đang nghe nhiều và playlist của tôi.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -33,10 +35,12 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  /// Lắng nghe sự kiện thay đổi dữ liệu để tự động làm mới giao diện real-time.
   void _onDataChanged() {
     if (mounted) _load();
   }
 
+  /// Tải dữ liệu bảng xếp hạng, lịch sử nghe gần đây và playlist từ server.
   Future<void> _load() async {
     setState(() {
       loading = true;
@@ -66,13 +70,14 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Phát bài hát được chọn (hiển thị và cập nhật trên thanh mini player ở bottom).
   Future<void> _play(Song song, List<Song> list) async {
     try {
       await PlayerController.instance.playSong(song, list);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Khong phat duoc: $e')),
+        SnackBar(content: Text('Không phát được: $e')),
       );
       return;
     }
@@ -82,17 +87,7 @@ class _HomePageState extends State<HomePage> {
         await MusicService.instance.logListen(song.musicId!);
       } catch (_) {}
     }
-
-    if (!mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NowPlayingPage()),
-    );
-
-    // Quay lai Home thi refresh (nghe gan day, luot nghe)
-    if (mounted) await _load();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +95,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(guest ? 'Vinyl Room (Khach)' : 'Vinyl Room'),
+        title: Text(guest ? 'Vinyl Room (Khách)' : 'Vinyl Room'),
         actions: [
           if (guest)
             TextButton(
@@ -111,9 +106,9 @@ class _HomePageState extends State<HomePage> {
                 );
                 if (mounted) await _load();
               },
-              child: const Text('Dang nhap'),
+              child: const Text('Đăng nhập'),
             ),
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
+          IconButton(onPressed: _load, icon: const Icon(Icons.refresh), tooltip: 'Làm mới'),
         ],
       ),
       body: loading
@@ -126,24 +121,24 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             if (!guest) ...[
-              _sectionTitle('Nghe gan day'),
+              _sectionTitle('Nghe gần đây'),
               if (recent.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text('Chua co lich su nghe'),
+                  child: Text('Chưa có lịch sử nghe'),
                 )
               else
                 _horizontalSongs(recent),
             ],
-            _sectionTitle('Dang nghe nhieu'),
+            _sectionTitle('Đang nghe nhiều'),
             if (topSongs.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('Chua co du lieu'),
+                child: Text('Chưa có dữ liệu'),
               )
             else
               _horizontalSongs(topSongs),
-            _sectionTitle('Playlist cua toi'),
+            _sectionTitle('Playlist của tôi'),
             if (guest)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -155,13 +150,13 @@ class _HomePageState extends State<HomePage> {
                     );
                     if (mounted) await _load();
                   },
-                  child: const Text('Dang nhap de xem playlist'),
+                  child: const Text('Đăng nhập để xem playlist'),
                 ),
               )
             else if (playlists.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('Chua co playlist. Tao o tab Ca nhan.'),
+                child: Text('Chưa có playlist. Tạo ở tab Cá nhân.'),
               )
             else
               SizedBox(
@@ -173,26 +168,35 @@ class _HomePageState extends State<HomePage> {
                   separatorBuilder: (_, __) => const SizedBox(width: 12),
                   itemBuilder: (_, i) {
                     final p = playlists[i];
-                    return Container(
-                      width: 140,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.queue_music, size: 36),
-                          const Spacer(),
-                          Text(
-                            '${p['playlist_name'] ?? ''}',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          Text('${p['playlist_song_list_count'] ?? 0} bai'),
-                        ],
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => PlaylistDetailPage(playlist: p)),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 140,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.queue_music, size: 36),
+                            const Spacer(),
+                            Text(
+                              '${p['playlist_name'] ?? ''}',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            Text('${p['playlist_song_list_count'] ?? 0} bài'),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -204,6 +208,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Trả về tiêu đề của từng mục (section).
   Widget _sectionTitle(String text) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
@@ -216,6 +221,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Trả về danh sách bài hát cuộn ngang.
   Widget _horizontalSongs(List<Song> list) {
     return SizedBox(
       height: 190,
@@ -263,6 +269,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Trả về widget ảnh bìa thay thế khi không tải được ảnh.
   Widget _coverPh() {
     return Container(
       width: 140,

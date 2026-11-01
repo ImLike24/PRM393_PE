@@ -1,3 +1,4 @@
+/// Lớp đại diện cho đối tượng Bài hát (Song) trong ứng dụng.
 class Song {
   final int? musicId;
   final String musicName;
@@ -19,9 +20,13 @@ class Song {
     this.luotNghe = 0,
   });
 
+  /// Getter trả về tên bài hát.
   String get title => musicName;
-  String get artist => artistName ?? 'Unknown';
 
+  /// Getter trả về tên ca sĩ (nếu không có thì trả về 'Không rõ').
+  String get artist => artistName ?? 'Không rõ';
+
+  /// Tạo bản sao mới của đối tượng Song với các thuộc tính được cập nhật.
   Song copyWith({bool? isFavorite}) {
     return Song(
       musicId: musicId,
@@ -35,6 +40,7 @@ class Song {
     );
   }
 
+  /// Chuyển đổi đối tượng Song thành Map (JSON).
   Map<String, dynamic> toMap() => {
     'music_id': musicId,
     'music_name': musicName,
@@ -46,6 +52,7 @@ class Song {
     'luot_nghe': luotNghe,
   };
 
+  /// Chuyển đổi Map (JSON) từ API thành đối tượng Song.
   factory Song.fromMap(Map<String, dynamic> map) {
     return Song(
       musicId: map['music_id'] as int?,

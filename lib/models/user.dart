@@ -1,3 +1,4 @@
+/// Lớp đại diện cho đối tượng Người dùng (User) trong ứng dụng.
 class User {
   final int? userId;
   final String username;
@@ -15,6 +16,7 @@ class User {
     this.isActive = 1,
   });
 
+  /// Chuyển đổi đối tượng User thành Map (JSON).
   Map<String, dynamic> toMap() => {
     'user_id': userId,
     'username': username,
@@ -24,6 +26,7 @@ class User {
     'isActive': isActive,
   };
 
+  /// Chuyển đổi Map (JSON) từ API thành đối tượng User.
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
       userId: map['user_id'] is int

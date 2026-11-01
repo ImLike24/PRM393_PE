@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import '../controllers/player_controller.dart';
 import '../models/song.dart';
 import '../services/music_service.dart';
 import '../services/session.dart';
+import 'now_playing_page.dart';
 
+/// Màn hình Tìm kiếm bài hát (hỗ trợ nhập tiếng Việt có dấu) và xem lịch sử tìm kiếm.
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -30,6 +33,7 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
+  /// Lắng nghe thay đổi dữ liệu để cập nhật lại kết quả tìm kiếm theo thời gian thực.
   void _onDataChanged() {
     if (!mounted) return;
     if (ctrl.text.trim().isNotEmpty) {
@@ -39,14 +43,19 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
+  /// Tải lịch sử tìm kiếm gần đây từ server.
   Future<void> _loadHistory() async {
     history = await MusicService.instance.getSearchHistory();
     if (mounted) setState(() {});
   }
 
+  /// Tìm kiếm bài hát theo từ khóa tiếng Việt có dấu và lưu lịch sử tìm kiếm.
   Future<void> _search([String? text]) async {
     final q = (text ?? ctrl.text).trim();
-    if (q.isEmpty) return;
+    if (q.isEmpty) {
+      setState(() => results = []);
+      return;
+    }
     ctrl.text = q;
     final messenger = ScaffoldMessenger.of(context);
     setState(() => loading = true);
@@ -62,10 +71,29 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
+  /// Phát bài hát được chọn từ kết quả tìm kiếm (hiển thị trên thanh mini player ở bottom).
+  Future<void> _playSong(Song song) async {
+    try {
+      await PlayerController.instance.playSong(song, results);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Không phát được bài hát: $e')),
+      );
+      return;
+    }
+
+    if (song.musicId != null) {
+      try {
+        await MusicService.instance.logListen(song.musicId!);
+      } catch (_) {}
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tim kiem')),
+      appBar: AppBar(title: const Text('Tìm kiếm')),
       body: Column(
         children: [
           Padding(
@@ -73,26 +101,33 @@ class _SearchPageState extends State<SearchPage> {
             child: TextField(
               controller: ctrl,
               decoration: InputDecoration(
-                hintText: 'Bai hat, ca si...',
+                hintText: 'Nhập tên bài hát, ca sĩ (có dấu)...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.arrow_forward),
-                  onPressed: _search,
+                  onPressed: () => _search(),
                 ),
                 border: const OutlineInputBorder(),
               ),
+              onChanged: (val) {
+                if (val.trim().isEmpty) {
+                  setState(() => results = []);
+                } else {
+                  _search(val);
+                }
+              },
               onSubmitted: _search,
             ),
           ),
-          if (Session.isLoggedIn && history.isNotEmpty) ...[
+          if (ctrl.text.trim().isEmpty && Session.isLoggedIn && history.isNotEmpty) ...[
             ListTile(
-              title: const Text('Tim kiem gan day'),
+              title: const Text('Tìm kiếm gần đây'),
               trailing: TextButton(
                 onPressed: () async {
                   await MusicService.instance.clearSearchHistory();
                   await _loadHistory();
                 },
-                child: const Text('Xoa tat ca'),
+                child: const Text('Xóa tất cả'),
               ),
             ),
             ...history.map((h) {
@@ -116,13 +151,26 @@ class _SearchPageState extends State<SearchPage> {
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator())
+                : ctrl.text.trim().isNotEmpty && results.isEmpty
+                ? const Center(child: Text('Không tìm thấy bài hát nào'))
                 : ListView.builder(
               itemCount: results.length,
               itemBuilder: (_, i) {
                 final s = results[i];
                 return ListTile(
+                  leading: const Icon(Icons.music_note),
                   title: Text(s.title),
                   subtitle: Text(s.artist),
+                  trailing: IconButton(
+                    icon: Icon(
+                      s.isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: s.isFavorite ? Colors.redAccent : null,
+                    ),
+                    onPressed: () async {
+                      await MusicService.instance.toggleFavorite(s.musicId!, !s.isFavorite);
+                    },
+                  ),
+                  onTap: () => _playSong(s),
                 );
               },
             ),

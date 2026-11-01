@@ -6,6 +6,7 @@ import '../services/music_service.dart';
 import '../services/session.dart';
 import 'login_page.dart';
 
+/// Màn hình phát nhạc toàn màn hình (Now Playing) với giao diện chuyên nghiệp, trực quan.
 class NowPlayingPage extends StatefulWidget {
   const NowPlayingPage({super.key});
 
@@ -28,10 +29,12 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
     super.dispose();
   }
 
+  /// Lắng nghe thay đổi dữ liệu để làm mới trạng thái yêu thích bài hát.
   void _onDataChanged() {
     if (mounted) setState(() {});
   }
 
+  /// Thêm hoặc bỏ thích bài hát hiện tại.
   Future<void> _toggleFavorite() async {
     final song = player.current;
     if (song?.musicId == null) return;
@@ -55,6 +58,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
     }
   }
 
+  /// Hiển thị bảng chọn playlist để thêm bài hát vào.
   Future<void> _addToPlaylist() async {
     final song = player.current;
     if (song?.musicId == null) return;
@@ -72,7 +76,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
 
     if (playlists.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chua co playlist. Tao o tab Ca nhan.')),
+        const SnackBar(content: Text('Chưa có playlist. Hãy tạo ở tab Cá nhân.')),
       );
       return;
     }
@@ -88,11 +92,17 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const ListTile(title: Text('Them vao playlist')),
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Thêm vào playlist',
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
               ...playlists.map((p) {
                 return ListTile(
-                  leading: const Icon(Icons.queue_music),
-                  title: Text('${p['playlist_name'] ?? ''}'),
+                  leading: const Icon(Icons.queue_music, color: Colors.amber),
+                  title: Text('${p['playlist_name'] ?? ''}', style: const TextStyle(color: Colors.white)),
                   onTap: () => Navigator.pop(ctx, p),
                 );
               }),
@@ -111,7 +121,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Da them vao ${selected['playlist_name']}')),
+        SnackBar(content: Text('Đã thêm vào playlist ${selected['playlist_name']}')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -119,12 +129,14 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
     }
   }
 
+  /// Định dạng thời lượng Duration thành chuỗi mm:ss.
   String _format(Duration d) {
     final m = d.inMinutes.remainder(60).toString();
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$m:$s';
   }
 
+  /// Hiển thị ảnh bìa bài hát.
   Widget _cover(Song song) {
     final url = song.coverImageUrl;
     if (url != null && url.isNotEmpty) {
@@ -137,6 +149,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
     return _placeholder();
   }
 
+  /// Hiển thị ảnh bìa mặc định khi lỗi hoặc không có ảnh.
   Widget _placeholder() {
     return Container(
       color: const Color(0xFF282828),
@@ -151,18 +164,18 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
     final song = player.current;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0F0E0D),
       body: SafeArea(
         child: song == null
             ? const Center(
           child: Text(
-            'Chua chon bai hat',
+            'Chưa chọn bài hát',
             style: TextStyle(color: Colors.white),
           ),
         )
             : Column(
           children: [
-            // Header
+            // Thanh tiêu đề trên cùng
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
@@ -174,10 +187,11 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                       color: Colors.white,
                       size: 32,
                     ),
+                    tooltip: 'Thu nhỏ',
                   ),
                   const Expanded(
                     child: Text(
-                      'DANG PHAT',
+                      'ĐANG PHÁT',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white70,
@@ -190,6 +204,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                   IconButton(
                     onPressed: _addToPlaylist,
                     icon: const Icon(Icons.more_vert, color: Colors.white),
+                    tooltip: 'Tùy chọn',
                   ),
                 ],
               ),
@@ -197,13 +212,13 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
 
             const Spacer(),
 
-            // Cover
+            // Ảnh bìa album
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: AspectRatio(
                 aspectRatio: 1,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
                   child: _cover(song),
                 ),
               ),
@@ -211,7 +226,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
 
             const Spacer(),
 
-            // Title + favorite
+            // Tên bài hát, ca sĩ và nút yêu thích
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Row(
@@ -248,9 +263,10 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                           ? Icons.favorite
                           : Icons.favorite_border,
                       color: song.isFavorite
-                          ? const Color(0xFF1DB954)
+                          ? const Color(0xFFE8A35A)
                           : Colors.white,
                     ),
+                    tooltip: 'Yêu thích',
                   ),
                 ],
               ),
@@ -258,7 +274,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
 
             const SizedBox(height: 8),
 
-            // Progress thati
+            // Thanh tiến trình phát nhạc (Slider)
             StreamBuilder<Duration?>(
               stream: player.durationStream,
               builder: (context, durSnap) {
@@ -279,7 +295,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                       children: [
                         SliderTheme(
                           data: SliderTheme.of(context).copyWith(
-                            activeTrackColor: Colors.white,
+                            activeTrackColor: const Color(0xFFE8A35A),
                             inactiveTrackColor: Colors.white24,
                             thumbColor: Colors.white,
                             trackHeight: 3,
@@ -328,7 +344,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
 
             const SizedBox(height: 8),
 
-            // Controls — lang nghe trang thai play that
+            // Các nút điều khiển phát nhạc (Repeat, Previous, Play/Pause, Next, Add)
             StreamBuilder<PlayerState>(
               stream: player.playerStateStream,
               builder: (context, snapshot) {
@@ -347,9 +363,10 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                         icon: Icon(
                           Icons.repeat,
                           color: player.repeat
-                              ? const Color(0xFF1DB954)
+                              ? const Color(0xFFE8A35A)
                               : Colors.white70,
                         ),
+                        tooltip: 'Lặp lại',
                       ),
                       IconButton(
                         iconSize: 40,
@@ -361,9 +378,10 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                           Icons.skip_previous,
                           color: Colors.white,
                         ),
+                        tooltip: 'Bài trước',
                       ),
                       Material(
-                        color: Colors.white,
+                        color: const Color(0xFFE8A35A),
                         shape: const CircleBorder(),
                         child: InkWell(
                           customBorder: const CircleBorder(),
@@ -390,6 +408,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                           Icons.skip_next,
                           color: Colors.white,
                         ),
+                        tooltip: 'Bài tiếp theo',
                       ),
                       IconButton(
                         onPressed: _addToPlaylist,
@@ -397,6 +416,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                           Icons.playlist_add,
                           color: Colors.white70,
                         ),
+                        tooltip: 'Thêm vào playlist',
                       ),
                     ],
                   ),
@@ -406,7 +426,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
 
             const SizedBox(height: 12),
 
-            // Volume control
+            // Thanh điều chỉnh âm lượng (Volume Control)
             StreamBuilder<double>(
               stream: player.volumeStream,
               builder: (context, snapshot) {
@@ -433,7 +453,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
                       Expanded(
                         child: SliderTheme(
                           data: SliderTheme.of(context).copyWith(
-                            activeTrackColor: Colors.white70,
+                            activeTrackColor: const Color(0xFFE8A35A),
                             inactiveTrackColor: Colors.white24,
                             thumbColor: Colors.white,
                             trackHeight: 2,
