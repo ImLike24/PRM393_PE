@@ -64,10 +64,12 @@ router.get("/search", async (req, res) => {
     const words = keyword.split(/\s+/).filter((w) => w.length > 0);
     const inputs = { userId };
     let whereClause = "";
+    let orderBy = "m.music_name";
 
     if (words.length === 1) {
       inputs.q0 = `%${words[0]}%`;
       whereClause = "m.music_name LIKE @q0";
+      orderBy = "CASE WHEN m.music_name LIKE @q0 THEN 1 ELSE 2 END, m.music_name";
     } else {
       inputs.qFull = `%${keyword}%`;
       const wordConditions = words.map((w, i) => {
@@ -77,12 +79,13 @@ router.get("/search", async (req, res) => {
       });
       // Khớp nguyên cụm từ HOẶC khớp tất cả các từ HOẶC khớp từng từ
       whereClause = `(m.music_name LIKE @qFull OR (${wordConditions.join(" AND ")}) OR (${wordConditions.join(" OR ")}))`;
+      orderBy = "CASE WHEN m.music_name LIKE @qFull THEN 1 ELSE 2 END, m.music_name";
     }
 
     const data = await querySongs(
       whereClause,
       inputs,
-      "CASE WHEN m.music_name LIKE @qFull THEN 1 ELSE 2 END, m.music_name",
+      orderBy,
     );
 
     if (userId && keyword) {
