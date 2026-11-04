@@ -3,6 +3,21 @@ const { getPool } = require("../configs/db");
 
 const router = express.Router();
 
+// Lấy danh sách tất cả người dùng (Users)
+router.get("/", async (req, res) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request().query(`
+      SELECT user_id, username, email, avatar_url, isActive
+      FROM users
+      ORDER BY user_id ASC
+    `);
+    res.json(result.recordset);
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
+  }
+});
+
 router.post("/:userId/liked/:musicId", async (req, res) => {
   try {
     const pool = await getPool();
