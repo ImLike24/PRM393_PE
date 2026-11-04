@@ -55,7 +55,6 @@ class _SearchPageState extends State<SearchPage> {
       setState(() => results = []);
       return;
     }
-    ctrl.text = q;
     final messenger = ScaffoldMessenger.of(context);
     setState(() => loading = true);
     try {
