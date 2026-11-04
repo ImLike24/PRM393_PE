@@ -51,7 +51,7 @@ CREATE TABLE music (
   album_id INT,
   genre_id INT,
   ranking INT,
-  luot_nghe INT DEFAULT 0,
+  listen_count INT DEFAULT 0,
   CONSTRAINT FK_Music_Artists FOREIGN KEY (artist_id)
     REFERENCES artists(artist_id) ON DELETE SET NULL,
   CONSTRAINT FK_Music_Albums FOREIGN KEY (album_id)
@@ -258,7 +258,7 @@ INSERT INTO user_playlist (user_id, playlist_name, playlist_song_list_count, fav
 -- SEED: MUSIC
 -- audio_url: doi sang http://10.0.2.2:3000/musics/... khi co file local
 -- ==========================================
-INSERT INTO music (music_name, music_length, audio_url, cover_image_url, artist_id, album_id, genre_id, ranking, luot_nghe) VALUES
+INSERT INTO music (music_name, music_length, audio_url, cover_image_url, artist_id, album_id, genre_id, ranking, listen_count) VALUES
 (N'Lạc Trôi', '03:55', N'http://10.0.2.2:3000/musics/LacTroi.mp3', N'https://example.com/cover/lactroi.jpg', 1, 1, 1, 1, 150000),
 (N'Đâu Chỉ Riêng Em', '04:12', N'http://10.0.2.2:3000/musics/DauChiRiengEm.mp3', N'https://example.com/cover/dauchiriengem.jpg', 2, 2, 2, 2, 120000),
 (N'Trốn Tìm', '04:30', N'http://10.0.2.2:3000/musics/TronTim.mp3', N'https://example.com/cover/trontim.jpg', 3, 3, 3, 3, 200000),
