@@ -6,7 +6,7 @@ const router = express.Router();
 const songSelect = `
   SELECT
     m.music_id, m.music_name, m.music_length, m.audio_url,
-    m.cover_image_url, m.listen_count, a.artist_name,
+    m.cover_image_url, m.listen_count AS listen_count, m.listen_count AS luot_nghe, a.artist_name,
     CASE WHEN l.music_id IS NULL THEN 0 ELSE 1 END AS is_favorite
   FROM music m
   LEFT JOIN artists a ON a.artist_id = m.artist_id
@@ -51,25 +51,54 @@ router.get("/favorites", async (req, res) => {
   }
 });
 
+// Tìm kiếm CHỈ THEO TÊN BÀI HÁT (m.music_name), hỗ trợ khớp cả cụm từ hoặc từng từ đơn lẻ
 router.get("/search", async (req, res) => {
   try {
     const userId = Number(req.query.userId) || 0;
     const keyword = (req.query.q || "").trim();
-    const data = await querySongs(
-      "(m.music_name LIKE @q OR a.artist_name LIKE @q)",
-      { userId, q: `%${keyword}%` },
-    );
-    if (userId && keyword) {
-      const pool = await getPool();
-      await pool
-        .request()
-        .input("userId", userId)
-        .input("search_query", keyword)
-        .query(`
-          INSERT INTO history (user_id, search_query, type)
-          VALUES (@userId, @search_query, 'search')
-        `);
+
+    if (!keyword) {
+      return res.json([]);
     }
+
+    const words = keyword.split(/\s+/).filter((w) => w.length > 0);
+    const inputs = { userId };
+    let whereClause = "";
+
+    if (words.length === 1) {
+      inputs.q0 = `%${words[0]}%`;
+      whereClause = "m.music_name LIKE @q0";
+    } else {
+      inputs.qFull = `%${keyword}%`;
+      const wordConditions = words.map((w, i) => {
+        const paramName = `q${i}`;
+        inputs[paramName] = `%${w}%`;
+        return `m.music_name LIKE @${paramName}`;
+      });
+      // Khớp nguyên cụm từ HOẶC khớp tất cả các từ HOẶC khớp từng từ
+      whereClause = `(m.music_name LIKE @qFull OR (${wordConditions.join(" AND ")}) OR (${wordConditions.join(" OR ")}))`;
+    }
+
+    const data = await querySongs(
+      whereClause,
+      inputs,
+      "CASE WHEN m.music_name LIKE @qFull THEN 1 ELSE 2 END, m.music_name",
+    );
+
+    if (userId && keyword) {
+      try {
+        const pool = await getPool();
+        await pool
+          .request()
+          .input("userId", userId)
+          .input("search_query", keyword)
+          .query(`
+            INSERT INTO history (user_id, search_query, type)
+            VALUES (@userId, @search_query, 'search')
+          `);
+      } catch (_) {}
+    }
+
     res.json(data);
   } catch (e) {
     res.status(500).json({ error: String(e.message || e) });
@@ -87,7 +116,7 @@ router.get("/recent", async (req, res) => {
       .query(`
         SELECT TOP 10
           m.music_id, m.music_name, m.music_length, m.audio_url,
-          m.cover_image_url, m.listen_count, a.artist_name,
+          m.cover_image_url, m.listen_count AS listen_count, m.listen_count AS luot_nghe, a.artist_name,
           CASE WHEN l.music_id IS NULL THEN 0 ELSE 1 END AS is_favorite,
           MAX(h.created_at) AS last_listened
         FROM history h

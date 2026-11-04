@@ -27,7 +27,7 @@ class Song {
   String get artist => artistName ?? 'Không rõ';
 
   /// Tạo bản sao mới của đối tượng Song với các thuộc tính được cập nhật.
-  Song copyWith({bool? isFavorite}) {
+  Song copyWith({bool? isFavorite, int? luotNghe}) {
     return Song(
       musicId: musicId,
       musicName: musicName,
@@ -36,7 +36,7 @@ class Song {
       coverImageUrl: coverImageUrl,
       artistName: artistName,
       isFavorite: isFavorite ?? this.isFavorite,
-      luotNghe: luotNghe,
+      luotNghe: luotNghe ?? this.luotNghe,
     );
   }
 
@@ -54,15 +54,20 @@ class Song {
 
   /// Chuyển đổi Map (JSON) từ API thành đối tượng Song.
   factory Song.fromMap(Map<String, dynamic> map) {
+    final rawLuotNghe = map['luot_nghe'] ?? map['listen_count'];
+    final parsedLuotNghe = rawLuotNghe is int
+        ? rawLuotNghe
+        : int.tryParse('$rawLuotNghe') ?? 0;
+
     return Song(
-      musicId: map['music_id'] as int?,
+      musicId: map['music_id'] is int ? map['music_id'] as int : int.tryParse('${map['music_id']}'),
       musicName: map['music_name'] as String? ?? '',
       musicLength: map['music_length'] as String? ?? '',
       audioUrl: map['audio_url'] as String? ?? '',
       coverImageUrl: map['cover_image_url'] as String?,
       artistName: map['artist_name'] as String?,
       isFavorite: (map['is_favorite'] as int? ?? 0) == 1,
-      luotNghe: map['luot_nghe'] as int? ?? 0,
+      luotNghe: parsedLuotNghe,
     );
   }
 }

@@ -15,7 +15,7 @@ router.get("/:playlistId/songs", async (req, res) => {
       .query(`
         SELECT
           m.music_id, m.music_name, m.music_length, m.audio_url,
-          m.cover_image_url, m.listen_count, a.artist_name,
+          m.cover_image_url, m.listen_count AS listen_count, m.listen_count AS luot_nghe, a.artist_name,
           CASE WHEN l.music_id IS NULL THEN 0 ELSE 1 END AS is_favorite
         FROM user_playlist_music upm
         INNER JOIN music m ON m.music_id = upm.music_id

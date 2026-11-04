@@ -3,9 +3,8 @@ import '../controllers/player_controller.dart';
 import '../models/song.dart';
 import '../services/music_service.dart';
 import '../services/session.dart';
-import 'now_playing_page.dart';
 
-/// Màn hình Tìm kiếm bài hát (hỗ trợ nhập tiếng Việt có dấu) và xem lịch sử tìm kiếm.
+/// Màn hình Tìm kiếm bài hát CHỈ THEO TÊN BÀI HÁT (tìm theo nguyên cụm từ hoặc từng từ).
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -49,7 +48,7 @@ class _SearchPageState extends State<SearchPage> {
     if (mounted) setState(() {});
   }
 
-  /// Tìm kiếm bài hát theo từ khóa tiếng Việt có dấu và lưu lịch sử tìm kiếm.
+  /// Tìm kiếm bài hát CHỈ THEO TÊN BÀI HÁT (hỗ trợ cả cụm từ hoặc từng từ) và lưu lịch sử.
   Future<void> _search([String? text]) async {
     final q = (text ?? ctrl.text).trim();
     if (q.isEmpty) {
@@ -93,7 +92,7 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tìm kiếm')),
+      appBar: AppBar(title: const Text('Tìm kiếm bài hát')),
       body: Column(
         children: [
           Padding(
@@ -101,7 +100,7 @@ class _SearchPageState extends State<SearchPage> {
             child: TextField(
               controller: ctrl,
               decoration: InputDecoration(
-                hintText: 'Nhập tên bài hát, ca sĩ (có dấu)...',
+                hintText: 'Nhập tên bài hát...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.arrow_forward),
@@ -152,7 +151,7 @@ class _SearchPageState extends State<SearchPage> {
             child: loading
                 ? const Center(child: CircularProgressIndicator())
                 : ctrl.text.trim().isNotEmpty && results.isEmpty
-                ? const Center(child: Text('Không tìm thấy bài hát nào'))
+                ? const Center(child: Text('Không tìm thấy bài hát nào khớp với tên vừa nhập'))
                 : ListView.builder(
               itemCount: results.length,
               itemBuilder: (_, i) {
