@@ -12,7 +12,7 @@
 
 1. Mở SQL Server Management Studio.
 2. Chạy toàn bộ file [`PRM_Pe.sql`](./PRM_Pe.sql).
-3. Copy configure.example.properties thanhf configure.properties và điền thông tin
+3. Copy env.example thành .env và điền thông tin
 
 ## Chạy API
 
